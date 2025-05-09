@@ -1,0 +1,48 @@
+// LED 연결 핀
+const int ledPins[] = {2, 3, 4};
+const int numLeds = 3;
+
+// 점멸 주기 (밀리초)
+const unsigned long interval60Hz = 1000 / 60 / 2;   // 60Hz 주기 / 2 (HIGH, LOW 반복)
+const unsigned long interval120Hz = 1000 / 120 / 2; // 120Hz 주기 / 2
+const unsigned long interval144Hz = 1000 / 144 / 2; // 144Hz 주기 / 2
+
+// 마지막으로 LED가 변경된 시간
+unsigned long lastChangeTime[numLeds];
+
+// LED 상태 (HIGH 또는 LOW)
+int ledState[numLeds];
+
+void setup() {
+  // LED 핀을 출력으로 설정
+  for (int i = 0; i < numLeds; i++) {
+    pinMode(ledPins[i], OUTPUT);
+    ledState[i] = LOW; // 초기 상태는 LOW
+    lastChangeTime[i] = 0;
+  }
+}
+
+void loop() {
+  unsigned long currentTime = millis();
+
+  // 60Hz LED 제어
+  if (currentTime - lastChangeTime[0] >= interval60Hz) {
+    ledState[0] = !ledState[0]; // 상태 반전
+    digitalWrite(ledPins[0], ledState[0]);
+    lastChangeTime[0] = currentTime;
+  }
+
+  // 120Hz LED 제어
+  if (currentTime - lastChangeTime[1] >= interval120Hz) {
+    ledState[1] = !ledState[1]; // 상태 반전
+    digitalWrite(ledPins[1], ledState[1]);
+    lastChangeTime[1] = currentTime;
+  }
+
+  // 144Hz LED 제어
+  if (currentTime - lastChangeTime[2] >= interval144Hz) {
+    ledState[2] = !ledState[2]; // 상태 반전
+    digitalWrite(ledPins[2], ledState[2]);
+    lastChangeTime[2] = currentTime;
+  }
+}
