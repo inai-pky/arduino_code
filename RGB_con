@@ -1,0 +1,81 @@
+// DHT11 라이브러리를 포함합니다.
+#include <DHT11.h>
+
+// DHT11 센서가 연결된 디지털 핀 번호를 정의합니다. (예: 2번 핀)
+#define DHTPIN 2
+DHT11 dht11(DHTPIN);
+
+const int redPin = 3;    // 빨간색 LED 핀
+const int greenPin = 5;  // 초록색 LED 핀
+const int bluePin = 6;   // 파란색 LED 핀 (사용자 코드에서 지정한 핀)
+
+// 색상 값을 저장할 구조체를 정의합니다.
+struct Color {
+  int r, g, b;
+};
+
+// 사용할 색상들을 미리 정의합니다.
+const Color RED = {255, 0, 0};    // 빨간색
+const Color GREEN = {0, 255, 0};  // 초록색
+const Color BLUE = {0, 0, 255}; // 파란색 (현재 조건에서는 사용되지 않음)
+const Color OFF = {0, 0, 0};      // LED 끄기 (검은색)
+
+void setup() {
+  // 시리얼 통신을 9600 bps로 시작합니다 (디버깅 및 값 확인용).
+  Serial.begin(9600);
+  Serial.println("DHT11 & RGB LED Control Test");
+
+  // 각 LED 핀을 출력으로 설정합니다.
+  pinMode(redPin, OUTPUT);
+  pinMode(greenPin, OUTPUT);
+  pinMode(bluePin, OUTPUT);
+
+  // 시작 시 LED를 끈 상태로 설정합니다.
+  setColor(OFF);
+}
+
+void loop() {
+  int temperature = 0;
+  int humidity = 0;
+
+  // 온습도 값을 읽어옵니다.
+  int result = dht11.readTemperatureHumidity(temperature, humidity);
+
+  if (result == 0) { // 성공적으로 값을 읽어온 경우
+    // 시리얼 모니터에 온습도 값을 출력합니다.
+    Serial.print("Temperature: ");
+    Serial.print(temperature);
+    Serial.print(" °C\tHumidity: ");
+    Serial.print(humidity);
+    Serial.println(" %");
+
+    // 온습도 조건에 따라 LED 색상을 변경합니다.
+    if (temperature >= 24 && humidity >= 60) {
+      setColor(RED); // 고온 다습: 빨간색
+      Serial.println("Condition: High Temperature & Humidity - LED RED");
+    } else if ((temperature > 18 && temperature < 24) && (humidity > 45 && humidity < 60)) {
+      setColor(GREEN); // 적정 온습도: 초록색
+      Serial.println("Condition: Optimal Temperature & Humidity - LED GREEN");
+    } else {
+      setColor(OFF); // 그 외 조건: LED 끄기
+      Serial.println("Condition: Other - LED OFF");
+    }
+
+  } else { // 값을 읽어오는데 실패한 경우
+    // 시리얼 모니터에 에러 메시지를 출력합니다.
+    Serial.print("Failed to read from DHT sensor! Error: ");
+    Serial.println(DHT11::getErrorString(result));
+    setColor(OFF); // 에러 발생 시 LED 끄기
+  }
+
+  delay(2000);
+}
+
+// RGB 색상을 설정하는 함수 (Color 구조체 사용)
+void setColor(Color color) {
+
+  analogWrite(redPin, color.r);
+  analogWrite(greenPin, color.g);
+  analogWrite(bluePin, color.b); 
+
+}
