@@ -64,9 +64,7 @@ void loop() {
 // RGB 색상을 설정하는 함수 (Color 구조체 사용)
 void setColor(Color color) {
   // analogWrite 함수를 사용하여 각 LED의 밝기를 PWM으로 제어합니다.
-  // Common Anode 타입의 RGB LED를 사용하는 경우, 값을 반전시켜야 할 수 있습니다.
   // (예: analogWrite(redPin, 255 - color.r);)
-  // 여기서는 Common Cathode 타입을 기준으로 작성되었습니다.
   analogWrite(redPin, color.r);
   analogWrite(greenPin, color.g);
   analogWrite(bluePin, color.b);
