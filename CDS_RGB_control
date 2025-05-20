@@ -1,0 +1,76 @@
+// 아두이노 자동 야간등 (무드등) 코드 - 색상 구조체 사용
+
+// --- 핀 설정 ---
+const int cdsPin = A0;      // CDS 센서 아날로그 입력 핀
+const int redPin = 9;       // RGB LED 빨간색 핀 (PWM 가능 핀)
+const int greenPin = 10;    // RGB LED 초록색 핀 (PWM 가능 핀)
+const int bluePin = 11;     // RGB LED 파란색 핀 (PWM 가능 핀)
+
+// --- 색상 구조체 정의 ---
+struct Color {
+  int r, g, b;
+};
+
+// --- 사용할 색상들을 미리 정의 ---
+const Color RED = {255, 0, 0};      // 빨간색
+const Color GREEN = {0, 255, 0};    // 초록색
+const Color BLUE = {0, 0, 255};     // 파란색 (어두울 때 켤 색상)
+// 다른 색상 예시:
+// const Color SOFT_BLUE = {50, 50, 255}; // 부드러운 파란색
+// const Color WARM_WHITE = {255, 180, 100}; // 따뜻한 흰색
+const Color OFF = {0, 0, 0};        // LED 끄기 (검은색)
+
+// --- 설정값 ---
+// 빛 감지 임계값 (이 값보다 낮으면 어둡다고 판단)
+// 실제 환경에 맞게 이 값을 조절해야 합니다.
+// 시리얼 모니터로 CDS 센서 값을 확인하면서 적절한 값을 찾으세요.
+int lightThreshold = 300;
+
+// 어두울 때 켤 LED 색상 (위에서 정의한 색상 중 선택)
+const Color nightLightColor = BLUE; // 예시로 파란색 사용
+
+void setup() {
+  // 시리얼 통신 시작 (디버깅 및 값 확인용)
+  Serial.begin(9600);
+
+  // LED 핀들을 출력으로 설정
+  pinMode(redPin, OUTPUT);
+  pinMode(greenPin, OUTPUT);
+  pinMode(bluePin, OUTPUT);
+
+  // 시작 시 LED를 끔
+  setRGBColor(OFF);
+  Serial.println("자동 야간등 시스템 시작 (색상 구조체 사용)");
+}
+
+void loop() {
+  // CDS 센서로부터 빛의 밝기 값 읽기
+  // 일반적인 CDS 센서 모듈은 빛이 강할수록 저항값이 작아지고,
+  // 이에 따라 아날로그 입력값이 커집니다. (0 ~ 1023)
+  // 따라서, 어두울수록 아날로그 입력값이 작아집니다.
+  int lightValue = analogRead(cdsPin);
+
+  // 읽은 값을 시리얼 모니터에 출력
+  Serial.print("CDS 센서 값: ");
+  Serial.println(lightValue);
+
+  // 빛의 밝기가 임계값보다 낮은지 (어두운지) 확인
+  if (lightValue < lightThreshold) {
+    // 어두우면 설정된 색상(nightLightColor)으로 LED 켬
+    setRGBColor(nightLightColor);
+    Serial.println("상태: 어두움 - LED 켜짐");
+  } else {
+    // 밝으면 LED 끔
+    setRGBColor(OFF);
+    Serial.println("상태: 밝음 - LED 꺼짐");
+  }
+
+  // 너무 빠른 반복을 피하기 위해 약간의 딜레이를 줌
+  delay(200); // 0.2초마다 센서 값 확인
+}
+
+void setRGBColor(const Color& color) {
+  analogWrite(redPin, color.r);
+  analogWrite(greenPin, color.g);
+  analogWrite(bluePin, color.b);
+}
