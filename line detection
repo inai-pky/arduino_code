@@ -1,0 +1,72 @@
+// 라인 트레이서 센서 핀 정의 (디지털 입력)
+const int sensorPin = 2; // 실제 사용하는 센서 핀 번호로 변경하세요.
+
+// RGB LED 각 핀에 연결된 아두이노 핀 번호를 정의합니다.
+// PWM 기능을 지원하는 핀을 사용해야 합니다 (보통 ~ 표시가 있는 핀).
+const int redPin = 9;    // 빨간색 LED 핀
+const int greenPin = 10; // 초록색 LED 핀
+const int bluePin = 11;  // 파란색 LED 핀
+
+// 색상 값을 저장할 구조체를 정의합니다.
+struct Color {
+  int r, g, b;
+};
+
+// 사용할 색상들을 미리 정의합니다.
+const Color BLUE_COLOR = {0, 0, 255};   // 검은색 라인 감지 시 켤 색상 (파란색)
+const Color GREEN_COLOR = {0, 255, 0}; // 흰색 표면 감지 시 켤 색상 (초록색)
+const Color OFF_COLOR = {0, 0, 0};     // LED 끄기
+
+void setup() {
+  Serial.begin(9600);
+  Serial.println("Black/White Line Detection with RGB LED");
+
+  // 센서 핀을 입력으로 설정합니다.
+  pinMode(sensorPin, INPUT);
+
+  // 각 LED 핀을 출력으로 설정합니다.
+  pinMode(redPin, OUTPUT);
+  pinMode(greenPin, OUTPUT);
+  pinMode(bluePin, OUTPUT);
+
+  // 초기 LED 상태를 끕니다.
+  setColor(OFF_COLOR);
+}
+
+void loop() {
+  // 센서 값 읽기 (디지털 값: HIGH 또는 LOW)
+  int sensorValue = digitalRead(sensorPin);
+
+  Serial.print("Sensor Value: ");
+  Serial.println(sensorValue);
+
+  // 흑백 상태 판단 및 RGB LED 제어
+  if (sensorValue == HIGH) { // 사용자 코드에 따르면 HIGH가 검은색 선 감지
+    Serial.println("Black Line Detected - LED BLUE");
+    setColor(BLUE_COLOR); // 검은색 라인 감지 시 파란색 LED 켜기
+  } else { // LOW가 흰색 표면 감지
+    Serial.println("White Surface Detected - LED GREEN");
+    setColor(GREEN_COLOR); // 흰색 표면 감지 시 초록색 LED 켜기
+  }
+
+  delay(100); // 센서 값 읽기 및 LED 제어 간격을 짧게 조정 (필요에 따라 조절)
+}
+
+// RGB 색상을 설정하는 함수 (Color 구조체 사용)
+void setColor(Color color) {
+  // analogWrite 함수를 사용하여 각 LED의 밝기를 PWM으로 제어합니다.
+  // Common Anode 타입의 RGB LED를 사용하는 경우, 값을 반전시켜야 할 수 있습니다.
+  // (예: analogWrite(redPin, 255 - color.r);)
+  // 여기서는 Common Cathode 타입을 기준으로 작성되었습니다.
+  analogWrite(redPin, color.r);
+  analogWrite(greenPin, color.g);
+  analogWrite(bluePin, color.b);
+
+  // 현재 설정된 색상 값을 시리얼 모니터에 출력합니다 (디버깅용).
+  Serial.print("Set LED - R: ");
+  Serial.print(color.r);
+  Serial.print(" G: ");
+  Serial.print(color.g);
+  Serial.print(" B: ");
+  Serial.println(color.b);
+}
