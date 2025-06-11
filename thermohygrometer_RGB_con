@@ -50,10 +50,10 @@ void loop() {
     Serial.println(" %");
 
     // 온습도 조건에 따라 LED 색상을 변경합니다.
-    if (temperature >= 24 && humidity >= 60) {
+    if () {
       setColor(RED); // 고온 다습: 빨간색
       Serial.println("Condition: High Temperature & Humidity - LED RED");
-    } else if ((temperature > 18 && temperature < 24) && (humidity > 45 && humidity < 60)) {
+    } else if () {
       setColor(GREEN); // 적정 온습도: 초록색
       Serial.println("Condition: Optimal Temperature & Humidity - LED GREEN");
     } else {
