@@ -1,11 +1,11 @@
 // 라인 트레이서 센서 핀 정의 (디지털 입력)
-const int sensorPin = 2; // 실제 사용하는 센서 핀 번호로 변경하세요.
+const int sensorPin = ; // 실제 사용하는 센서 핀 번호로 변경하세요.
 
 // RGB LED 각 핀에 연결된 아두이노 핀 번호를 정의합니다.
 // PWM 기능을 지원하는 핀을 사용해야 합니다 (보통 ~ 표시가 있는 핀).
-const int redPin = 9;    // 빨간색 LED 핀
-const int greenPin = 10; // 초록색 LED 핀
-const int bluePin = 11;  // 파란색 LED 핀
+const int redPin = ;    // 빨간색 LED 핀
+const int greenPin = ; // 초록색 LED 핀
+const int bluePin = ;  // 파란색 LED 핀
 
 // 색상 값을 저장할 구조체를 정의합니다.
 struct Color {
@@ -13,8 +13,8 @@ struct Color {
 };
 
 // 사용할 색상들을 미리 정의합니다.
-const Color BLUE_COLOR = {0, 0, 255};   // 검은색 라인 감지 시 켤 색상 (파란색)
-const Color GREEN_COLOR = {0, 255, 0}; // 흰색 표면 감지 시 켤 색상 (초록색)
+const Color BLUE_COLOR = {0, 0, 0};   // 검은색 라인 감지 시 켤 색상 (파란색)
+const Color GREEN_COLOR = {0, 0, 0}; // 흰색 표면 감지 시 켤 색상 (초록색)
 const Color OFF_COLOR = {0, 0, 0};     // LED 끄기
 
 void setup() {
