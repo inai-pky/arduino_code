@@ -1,0 +1,214 @@
+#include <LedControl.h>
+
+// --- 핀 설정 ---
+// MAX7219
+const int DIN_PIN = 12;
+const int CS_PIN = 10;
+const int CLK_PIN = 11;
+
+LedControl lc = LedControl(DIN_PIN, CLK_PIN, CS_PIN, 1);
+
+// --- 8x8 숫자 폰트 데이터 ---
+const byte font_0[8] = {B00111100,B01000010,B01000110,B01001010,B01010010,B01100010,B01000010,B00111100};
+const byte font_1[8] = {B00011000,B00111000,B00011000,B00011000,B00011000,B00011000,B00011000,B00111110};
+const byte font_2[8] = {B00111100,B01000010,B00000010,B00000100,B00001000,B00010000,B01000000,B01111110};
+const byte font_3[8] = {B00111100,B01000010,B00000010,B00011100,B00000010,B00000010,B01000010,B00111100};
+const byte font_4[8] = {B00000100,B00001100,B00010100,B00100100,B01111110,B00000100,B00000100,B00000100};
+const byte font_5[8] = {B01111110,B01000000,B01000000,B01111100,B00000010,B00000010,B01000010,B00111100};
+const byte font_6[8] = {B00111100,B01000010,B01000000,B01111100,B01000010,B01000010,B01000010,B00111100};
+const byte font_7[8] = {B01111110,B00000010,B00000100,B00001000,B00010000,B00100000,B00100000,B00100000};
+const byte font_8[8] = {B00111100,B01000010,B01000010,B00111100,B01000010,B01000010,B01000010,B00111100};
+const byte font_9[8] = {B00111100,B01000010,B01000010,B01000010,B00111110,B00000010,B01000010,B00111100};
+
+
+// --- 게임 변수 ---
+// 뱀
+int snakeX[64], snakeY[64]; // 뱀의 각 부분의 좌표 (최대 8x8=64칸)
+int snakeLength;            // 현재 뱀의 길이
+int direction;              // 0:위, 1:오른쪽, 2:아래, 3:왼쪽
+
+// 먹이(사과)
+int appleX[2], appleY[2]; // 사과 2개의 좌표
+bool isAppleEaten[2];     // 각 사과를 먹었는지 여부
+int applesLeft;           // 먹어야 할 남은 사과 수
+int score;                // 총 먹은 사과 개수 (점수)
+
+// 게임 상태
+bool isGameOver;
+const int INITIAL_SPEED_DELAY = 300; // 게임 시작 속도
+int gameSpeed = INITIAL_SPEED_DELAY; // 게임 속도(ms). 숫자가 작을수록 빨라짐.
+const int MAX_SPEED_DELAY = 75; // 최고 속도 제한 (최소 딜레이 값, 75ms)
+
+void setup() {
+  Serial.begin(9600);
+  lc.shutdown(0, false);
+  lc.setIntensity(0, 5);
+  lc.clearDisplay(0);
+  randomSeed(analogRead(0));
+  resetGame();
+}
+
+void loop() {
+  if (!isGameOver) {
+    handleInput();
+    updateGame();
+    drawElements();
+  }
+  delay(gameSpeed);
+}
+
+// 게임을 초기 상태로 리셋하는 함수
+void resetGame() {
+  isGameOver = false;
+  score = 0; // 점수 초기화
+  gameSpeed = INITIAL_SPEED_DELAY;
+  snakeLength = 3;
+  snakeX[0] = 4; snakeY[0] = 4;
+  snakeX[1] = 4; snakeY[1] = 5;
+  snakeX[2] = 4; snakeY[2] = 6;
+  direction = 0;
+  placeNewApples();
+}
+
+// 키보드 입력을 처리하는 함수
+void handleInput() {
+  if (Serial.available() > 0) {
+    char input = Serial.read();
+    
+    if ((input == 'w' || input == 'W') && direction != 2) direction = 0;
+    else if ((input == 'd' || input == 'D') && direction != 3) direction = 1;
+    else if ((input == 's' || input == 'S') && direction != 0) direction = 2;
+    else if ((input == 'a' || input == 'A') && direction != 1) direction = 3;
+    else if (input == '+' || input == '=') gameSpeed = max(MAX_SPEED_DELAY, gameSpeed - 25);
+    else if (input == '-') gameSpeed = min(500, gameSpeed + 25);
+  }
+}
+
+// 게임 상태를 업데이트하는 함수
+void updateGame() {
+  for (int i = snakeLength - 1; i > 0; i--) {
+    snakeX[i] = snakeX[i - 1];
+    snakeY[i] = snakeY[i - 1];
+  }
+
+  if (direction == 0) snakeY[0]--;
+  if (direction == 1) snakeX[0]++;
+  if (direction == 2) snakeY[0]++;
+  if (direction == 3) snakeX[0]--;
+
+  if (snakeX[0] < 0 || snakeX[0] > 7 || snakeY[0] < 0 || snakeY[0] > 7) {
+    endGame(); return;
+  }
+  for (int i = 1; i < snakeLength; i++) {
+    if (snakeX[0] == snakeX[i] && snakeY[0] == snakeY[i]) {
+      endGame(); return;
+    }
+  }
+
+  for (int i = 0; i < 2; i++) {
+    if (!isAppleEaten[i] && snakeX[0] == appleX[i] && snakeY[0] == appleY[i]) {
+      snakeLength++;
+      if (snakeLength > 63) snakeLength = 63;
+      score++; // 점수 증가
+      isAppleEaten[i] = true;
+      applesLeft--;
+      gameSpeed = max(MAX_SPEED_DELAY, gameSpeed - 10);
+      break;
+    }
+  }
+
+  if (applesLeft == 0) {
+    placeNewApples();
+  }
+}
+
+// 게임 화면을 그리는 함수
+void drawElements() {
+  lc.clearDisplay(0);
+  for (int i = 0; i < 2; i++) {
+    if (!isAppleEaten[i]) {
+      lc.setLed(0, appleY[i], appleX[i], true);
+    }
+  }
+  for (int i = 0; i < snakeLength; i++) {
+    lc.setLed(0, snakeY[i], snakeX[i], true);
+  }
+}
+
+// 새로운 먹이 2개를 생성하는 함수
+void placeNewApples() {
+  applesLeft = 2;
+  for (int i = 0; i < 2; i++) {
+    bool onConflict;
+    do {
+      onConflict = false;
+      appleX[i] = random(0, 8);
+      appleY[i] = random(0, 8);
+      for (int j = 0; j < snakeLength; j++) {
+        if (appleX[i] == snakeX[j] && appleY[i] == snakeY[j]) {
+          onConflict = true; break;
+        }
+      }
+      if(onConflict) continue;
+      if (i == 1 && appleX[1] == appleX[0] && appleY[1] == appleY[0]) {
+         onConflict = true;
+      }
+    } while (onConflict);
+    isAppleEaten[i] = false;
+  }
+}
+
+// 한 자리 숫자를 매트릭스에 표시하는 함수
+void displayDigit(int digit) {
+  const byte* font;
+  switch(digit) {
+    case 0: font = font_0; break;
+    case 1: font = font_1; break;
+    case 2: font = font_2; break;
+    case 3: font = font_3; break;
+    case 4: font = font_4; break;
+    case 5: font = font_5; break;
+    case 6: font = font_6; break;
+    case 7: font = font_7; break;
+    case 8: font = font_8; break;
+    case 9: font = font_9; break;
+    default: return;
+  }
+  for(int i=0; i<8; i++) {
+    lc.setRow(0, i, font[i]);
+  }
+}
+
+// 점수를 매트릭스에 표시하는 함수
+void displayScore(int finalScore) {
+  lc.clearDisplay(0);
+  if (finalScore == 0) {
+    displayDigit(0);
+    delay(1500);
+  } else {
+    char scoreStr[5];
+    sprintf(scoreStr, "%d", finalScore); // 숫자를 문자열로 변환
+    for (int i = 0; scoreStr[i] != '\0'; i++) {
+      displayDigit(scoreStr[i] - '0'); // 각 문자를 숫자로 변환하여 표시
+      delay(1500);
+      lc.clearDisplay(0);
+    }
+  }
+}
+
+// 게임 오버 처리 함수
+void endGame() {
+  isGameOver = true;
+  // 게임 오버 시 X자 표시
+  lc.clearDisplay(0);
+  for(int i=0; i<8; i++) {
+    lc.setLed(0, i, i, true);
+    lc.setLed(0, i, 7-i, true);
+  }
+  delay(2000);
+
+  // 점수 표시
+  displayScore(score);
+  
+  resetGame(); // 게임 재시작
+}
